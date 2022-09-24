@@ -70,6 +70,9 @@ class Tavern : Room(TAVERN_NAME) {
 
     override val status: String = "Busy"
 
+    override val lootBox: LootBox<Key> =
+        LootBox(Key("key to Nogartse's evil lair"))
+
     override fun enterRoom() {
         narrate("${player.name} enters $TAVERN_NAME")
         narrate("There are several items for sale:")

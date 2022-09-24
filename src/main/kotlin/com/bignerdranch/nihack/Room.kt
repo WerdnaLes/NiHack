@@ -3,7 +3,7 @@ package com.bignerdranch.nihack
 open class Room(val name: String) {
 
     protected open val status = "Calm"
-    var mapPos = "O"
+    open val lootBox: LootBox<Loot> = LootBox.random()
 
     open fun description() = "$name (Currently: $status)"
 

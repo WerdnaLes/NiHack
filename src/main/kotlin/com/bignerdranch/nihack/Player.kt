@@ -17,7 +17,6 @@ class Player(
     override val diceSides = 4
 
 
-
     val title: String
         get() = when {
             name.all { it.isDigit() } -> "The Identifiable"
@@ -41,7 +40,9 @@ class Player(
     }
 
 
-    val inventory: List<String>
+    val inventory = mutableListOf<Loot>()
+
+    var gold = 0
 
     //    private var isArenaOpen = false
 //    private lateinit var opponentName: String
@@ -51,18 +52,14 @@ class Player(
 //    }
 //    private fun getWillingCombatants() =
 //        listOf("Cornelius", "Cheryl")
-    init {
-        val baseInventory = listOf("Waterskin", "torches")
-        val classInventory = when (name) {
-            "archer" -> listOf("arrows")
-            "Wizard" -> listOf("arcane staff", "spellbook")
-            else -> emptyList()
-        }
-        inventory = baseInventory + classInventory
-    }
 //    init {
-//        require(healthPoints > 0) { "HP must be greater than zero" }
-//        require(name.isNotBlank()) { "Player must have a name" }
+//        val baseInventory = listOf("Waterskin", "torches")
+//        val classInventory = when (name) {
+//            "archer" -> listOf("arrows")
+//            "Wizard" -> listOf("arcane staff", "spellbook")
+//            else -> emptyList()
+//        }
+//        inventory = baseInventory + classInventory
 //    }
 
     constructor(name: String) : this(

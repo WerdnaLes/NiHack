@@ -21,7 +21,9 @@ if (::player.isInitialized) {
     player = Player(promptHeroName())
 //    changeNarratorMood() -> FOR LATER
 
-
+    val lootBox = LootBox.random()
+    val loot = lootBox.takeLootOfType<Hat>()
+    player.name.print().addEnthusiasm(4).print().run {  }
     Game.play()
 }
 
@@ -93,6 +95,39 @@ object Game {
         }
     }
 
+    fun takeLoot() {
+        val loot = currentRoom.lootBox.takeLoot()
+        if (loot == null) {
+            narrate("${player.name} approaches the loot box, but it is empty")
+        } else {
+            narrate("${player.name} now has a ${loot.name}")
+            player.inventory += loot
+        }
+    }
+
+    fun sellLoot() {
+        when (val currentRoom = currentRoom) {
+            is TownSquare -> {
+                if (player.inventory.size <= 0) {
+                    narrate("You have nothing to sell")
+                    return
+                }
+                player.inventory.forEach { item ->
+                    if (item is Sellable) {
+                        val sellPrice = currentRoom.sellLoot(item)
+                        narrate("Sold ${item.name} for $sellPrice gold")
+                        player.gold += sellPrice
+                    } else {
+                        narrate("Your ${item.name} can't be sold")
+                    }
+                }
+                player.inventory.removeAll { it is Sellable }
+            }
+
+            else -> narrate("You cannot sell anything here")
+        }
+    }
+
     fun move(direction: Direction) {
         val newPosition = direction.updateCoordinate(currentPosition)
         val newRoom = worldMap.getOrNull(newPosition.y)?.getOrNull(newPosition.x)
@@ -115,15 +150,23 @@ object Game {
             return
         }
 
+        var combatRound = 0
+        val previousNarrationModifier = narrationModifier
+        narrationModifier = {
+            it.addEnthusiasm(enthusiasmLevel = combatRound)
+        }
+
         while (player.healthPoints > 0 &&
             currentMonster.healthPoints > 0
         ) {
+            combatRound++
             player.attack(currentMonster)
             if (currentMonster.healthPoints > 0) {
                 currentMonster.attack(player)
             }
             Thread.sleep(1000)
         }
+        narrationModifier = previousNarrationModifier
 
         if (player.healthPoints <= 0) {
             narrate("You have been defeated! Thanks for playing")
@@ -172,6 +215,23 @@ object Game {
 
             "prophesize" -> player.prophesize()
             "map" -> printMap()
+            "take" -> {
+                if (argument.equals("loot", true)) {
+                    takeLoot()
+                } else {
+                    narrate("I don't know what you're trying to take")
+                }
+            }
+
+            "sell" -> {
+                if (argument.equals("loot", true)) {
+                    sellLoot()
+                } else {
+                    narrate("I don't know what you're trying to sell")
+                }
+            }
+
+            "inventory" -> player.inventory.forEach { println(it.name) }
             "ring" -> TownSquare().ringBell()
             "fight" -> fight()
             "hp" -> println(player.healthPoints)
