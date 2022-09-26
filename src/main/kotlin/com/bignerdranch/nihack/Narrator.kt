@@ -56,7 +56,7 @@ fun changeNarratorMood() {
         3 -> {
             mood = "unsure"
             modifier = { message ->
-                message
+                "$message?"
             }
         }
         4 -> {

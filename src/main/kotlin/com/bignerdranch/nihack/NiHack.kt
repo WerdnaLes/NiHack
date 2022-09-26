@@ -4,6 +4,9 @@ import kotlin.random.Random
 import kotlin.system.exitProcess
 
 lateinit var player: Player
+private operator fun List<List<Room>>.get(coordinate: Coordinate) =
+    getOrNull(coordinate.y)?.getOrNull(coordinate.x)
+
 //var some by Delegates.notNull<Boolean>()
 
 
@@ -19,12 +22,33 @@ if (::player.isInitialized) {
 }*/
 
     player = Player(promptHeroName())
-//    changeNarratorMood() -> FOR LATER
+    changeNarratorMood()
 
-    val lootBox = LootBox.random()
-    val loot = lootBox.takeLootOfType<Hat>()
-    player.name.print().addEnthusiasm(4).print().run {  }
+    println("Welcome, ${player.name}".frame(5))
+//    val lootBox = LootBox.random()
+//    val loot = lootBox.takeLootOfType<Hat>()
+//    player.name.print().addEnthusiasm(4).print().run { }
+//    val anotherLoot = Fedora("some ", 4)
+//    val someSome = Gemstones(20)
+//
+//    val test = anotherLoot + someSome
+//    println(test)
     Game.play()
+}
+
+fun frame(
+    name: String, padding: Int,
+    formatChar: String = "*"
+): String {
+    val greeting = "$name!"
+    val middle = formatChar
+        .padEnd(padding)
+        .plus(greeting)
+        .plus(formatChar.padStart(padding))
+    val end = (0 until middle.length).joinToString("") {
+        formatChar
+    }
+    return "$end\n$middle\n$end"
 }
 
 fun printIsSourceOfBlessings(any: Any) {
@@ -39,13 +63,11 @@ fun printIsSourceOfBlessings(any: Any) {
 fun promptHeroName(): String {
     narrate("A hero enters the town of Kronstadt. What is their name?", ::makeYellow)
     // NEEDED LATER:
-//    val input = readLine()
-//    require(!input.isNullOrEmpty()) {
-//        "The hero must have a name"
-//    }
-//    return input
-    println("Satyricon")
-    return "Satyricon"
+    val input = readLine()
+    require(!input.isNullOrEmpty()) {
+        "The hero must have a name"
+    }
+    return input
 }
 
 object Game {
@@ -63,7 +85,7 @@ object Game {
     private val onMapPosition: MutableList<MutableList<String>> = mutableListOf()
 
     init {
-        narrate("Welcome, adventurer")
+//        narrate("Welcome, adventurer")
         val mortality = if (player.isImmortal) "an immortal" else "a mortal"
         narrate("${player.name}, $mortality, has ${player.healthPoints} health points")
         initOnMapPosition()
@@ -92,6 +114,20 @@ object Game {
 
             print("> Enter your command: ")
             GameInput(readLine()).processCommand()
+        }
+    }
+
+    fun configureCurrentRoom() {
+        val monsterRoom = currentRoom as? MonsterRoom ?: return
+
+        monsterRoom.configurePitGoblin {
+            it.healthPoints = when {
+                "Haunted" in name -> 60
+                "Dungeon" in name -> 45
+                "Town Square" in name -> 15
+                else -> 30
+            }
+            it
         }
     }
 
@@ -129,17 +165,14 @@ object Game {
     }
 
     fun move(direction: Direction) {
-        val newPosition = direction.updateCoordinate(currentPosition)
-        val newRoom = worldMap.getOrNull(newPosition.y)?.getOrNull(newPosition.x)
+        val newPosition = currentPosition move direction
+        val newRoom = worldMap[newPosition].orEmptyRoom()
 
-        if (newRoom != null) {
-            narrate("The hero moves ${direction.name}")
-            updateOnMapPosition(oldPosition = currentPosition, newPosition = newPosition)
-            currentPosition = newPosition
-            currentRoom = newRoom
-        } else {
-            narrate("You cannot move ${direction.name}")
-        }
+        narrate("The hero moves ${direction.name}")
+        updateOnMapPosition(oldPosition = currentPosition, newPosition = newPosition)
+        currentPosition = newPosition
+        currentRoom = newRoom
+
     }
 
     fun fight() {
@@ -183,8 +216,8 @@ object Game {
     }
 
     private fun updateOnMapPosition(oldPosition: Coordinate, newPosition: Coordinate) {
-        onMapPosition[oldPosition.y][oldPosition.x] = "O"
-        onMapPosition[newPosition.y][newPosition.x] = "X"
+        onMapPosition[oldPosition] = "O"
+        onMapPosition[newPosition] = "X"
     }
 
     fun printMap() {
@@ -222,6 +255,8 @@ object Game {
                     narrate("I don't know what you're trying to take")
                 }
             }
+
+            "config" -> configureCurrentRoom()
 
             "sell" -> {
                 if (argument.equals("loot", true)) {
